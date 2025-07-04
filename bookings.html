@@ -6,17 +6,17 @@
   <style>
     body {
       font-family: sans-serif;
-      background: #222;
-      color: #eee; 
+      background: #1e1e1e;
+      color: #f0f0f0;
       padding: 20px;
     }
     .event {
-      margin-bottom: 20px;
-      padding: 10px;
-      background: #333;
+      background: #2e2e2e;
       border-left: 5px solid #4CAF50;
+      padding: 10px;
+      margin-bottom: 20px;
     }
-    .title { font-weight: bold; font-size: 1.2em; }
+    .title { font-size: 1.2em; font-weight: bold; }
     .time, .location { margin-top: 5px; }
   </style>
 </head>
@@ -24,47 +24,31 @@
   <h1>Today's Room Bookings</h1>
   <div id="events"></div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.4.0/ical.min.js"></script>
   <script>
     const feedUrl = "https://stthomaslancaster.churchsuite.com/-/bookings/7cd4224e-7eea-4457-a2c4-41dcd9a0b008/json";
 
     fetch(feedUrl)
-      .then(res => res.text())
+      .then(response => response.text())
       .then(data => {
-        const jcalData = ICAL.parse(data);
-        const comp = new ICAL.Component(jcalData);
-        const events = comp.getAllSubcomponents("vevent");
+        const eventsRaw = data.split("BEGIN:VEVENT").slice(1); // Skip header
 
         const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
         const container = document.getElementById("events");
 
-        events.forEach(event => {
-          const summary = event.getFirstPropertyValue("summary");
-          const dtstart = event.getFirstPropertyValue("dtstart");
-          const dtend = event.getFirstPropertyValue("dtend");
-          const location = event.getFirstPropertyValue("location");
+        eventsRaw.forEach(raw => {
+          const summaryMatch = raw.match(/SUMMARY:(.+)/);
+          const dtstartMatch = raw.match(/DTSTART:(\d{8}T\d{6})Z?/);
+          const dtendMatch = raw.match(/DTEND:(\d{8}T\d{6})Z?/);
+          const locationMatch = raw.match(/LOCATION:(.+)/);
 
-          const start = dtstart.toJSDate();
-          const end = dtend.toJSDate();
-          const dateStr = start.toISOString().slice(0, 10);
+          if (summaryMatch && dtstartMatch && dtendMatch) {
+            const summary = summaryMatch[1].trim();
+            const location = locationMatch ? locationMatch[1].trim() : "Not specified";
 
-          if (dateStr === today) {
-            const div = document.createElement("div");
-            div.className = "event";
-            div.innerHTML = `
-              <div class="title">${summary}</div>
-              <div class="time">${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} – ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-              <div class="location">Location: ${location || "Not specified"}</div>
-            `;
-            container.appendChild(div);
-          }
-        });
+            const start = new Date(dtstartMatch[1].replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, "$1-$2-$3T$4:$5:$6"));
+            const end = new Date(dtendMatch[1].replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, "$1-$2-$3T$4:$5:$6"));
+            const dateStr = start.toISOString().slice(0, 10);
 
-        if (!container.hasChildNodes()) {
-          container.innerHTML = "<p>No bookings today.</p>";
-        }
-      });
-  </script>
-</body>
-</html>
+            if (dateStr === today) {
+              const eventDiv = document.createElement("div");
+              event
