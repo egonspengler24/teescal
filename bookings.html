@@ -25,7 +25,7 @@
   <div id="events"></div>
 
   <script>
-    const feedUrl = "https://stthomaslancaster.churchsuite.com/-/bookings/7cd4224e-7eea-4457-a2c4-41dcd9a0b008/json";
+    const feedUrl = "https://stthomaslancaster.churchsuite.com/ical/Chris_D1xon.-pel2tu1xu0ulxyoct6bt-b.ics'";
 
     fetch(feedUrl)
       .then(response => response.text())
@@ -51,4 +51,25 @@
 
             if (dateStr === today) {
               const eventDiv = document.createElement("div");
-              event
+              eventDiv.className = "event";
+              eventDiv.innerHTML = `
+                <div class="title">${summary}</div>
+                <div class="time">${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} – ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                <div class="location">Location: ${location}</div>
+              `;
+              container.appendChild(eventDiv);
+            }
+          }
+        });
+
+        if (!container.hasChildNodes()) {
+          container.innerHTML = "<p>No bookings today.</p>";
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load feed:", err);
+        document.getElementById("events").innerHTML = "<p>Error loading bookings.</p>";
+      });
+  </script>
+</body>
+</html>
